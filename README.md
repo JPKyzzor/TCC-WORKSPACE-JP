@@ -49,9 +49,37 @@ LANGCHAIN4J_GOOGLE_AI_GEMINI_CHAT_MODEL_MODEL_NAME=gemini-2.5-flash
 APP_CORS_ALLOWED_ORIGINS=http://localhost:4200
 ```
 
+O backend carrega esse arquivo `.env` automaticamente quando o comando e executado dentro da pasta `back`.
+
 4. Crie o banco no PostgreSQL com o mesmo nome usado em `SPRING_DATASOURCE_URL`.
 
-5. Rode a API:
+5. Cadastre pelo menos um usuario diretamente no banco.
+
+O sistema nao possui tela ou endpoint de cadastro de usuarios. Os usuarios devem ser criados com `INSERT` direto na tabela `usuario`.
+
+A senha deve ser salva criptografada com BCrypt no campo `senha_hash`. O primeiro usuario cadastrado no banco, ou seja, o usuario com `id = 1`, tem acesso administrativo a rota `/relatorio` no frontend.
+
+Para gerar o hash da senha diretamente no PostgreSQL, habilite a extensao `pgcrypto` no banco:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+```
+
+Exemplo para criar o primeiro usuario em um banco vazio, informando a senha em texto puro:
+
+```sql
+INSERT INTO usuario (login, senha_hash, ativo, tester)
+VALUES (
+  'admin',
+  crypt('password', gen_salt('bf')),
+  true,
+  false
+);
+```
+
+Nesse exemplo, o login e `admin` e a senha para acessar o sistema e `password`. O valor salvo em `senha_hash` ja sera o hash BCrypt gerado pelo PostgreSQL.
+
+6. Rode a API:
 
 ```bash
 ./mvnw spring-boot:run
