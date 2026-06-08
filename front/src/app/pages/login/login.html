@@ -1,0 +1,36 @@
+<main class="login-page">
+  <section class="login-card">
+    <h1>Entrar</h1>
+    <p>Faça login para acessar o sistema.</p>
+
+    <form (ngSubmit)="entrar()" #loginForm="ngForm" novalidate>
+      <label for="login">Login</label>
+      <input
+        id="login"
+        name="login"
+        type="text"
+        required
+        [(ngModel)]="login"
+        [disabled]="carregando()"
+      />
+
+      <label for="senha">Senha</label>
+      <input
+        id="senha"
+        name="senha"
+        type="password"
+        required
+        [(ngModel)]="senha"
+        [disabled]="carregando()"
+      />
+
+      @if (erro()) {
+        <p class="erro">{{ erro() }}</p>
+      }
+
+      <button type="submit" [disabled]="carregando() || !loginForm.form.valid">
+        {{ carregando() ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </form>
+  </section>
+</main>

@@ -1,0 +1,270 @@
+<div class="page">
+  <header class="page-header">
+    <div class="header-actions">
+      <button type="button" class="btn-secondary" (click)="irParaFormulario()">
+        Ir para formulário
+      </button>
+      <button type="button" class="btn-logout" (click)="deslogar()">Deslogar</button>
+    </div>
+    <h1>Relatórios</h1>
+    <p class="subtitle">Visualização completa das ordens com filtros opcionais.</p>
+  </header>
+
+  <section class="filters-card">
+    <div class="filters-row">
+      <div class="field field-users">
+        <label>Usuários</label>
+        <div class="checkbox-list">
+          @for (usuario of usuarios(); track trackByUsuarioId($index, usuario)) {
+            <label class="checkbox-option">
+              <input
+                type="checkbox"
+                [checked]="isUsuarioSelecionado(usuario.id)"
+                [disabled]="carregando()"
+                (change)="alternarUsuario(usuario.id, $event)"
+              />
+              {{ usuario.login }} ({{ usuario.id }})
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="field field-checkbox">
+        <label>Tester</label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="usarFiltroTester" [disabled]="carregando()" />
+          Ativar filtro
+        </label>
+        <label class="checkbox-label inline">
+          <input
+            type="checkbox"
+            [(ngModel)]="filtroTester"
+            [disabled]="carregando() || !usarFiltroTester"
+          />
+          Tester = true
+        </label>
+      </div>
+
+      <div class="field field-fill">
+        <label>Feedback preenchimento</label>
+        <div class="checkbox-list">
+          @for (opcao of opcoesPreenchimento; track opcao.value) {
+            <label class="checkbox-option">
+              <input
+                type="checkbox"
+                [checked]="isPreenchimentoSelecionado(opcao.value)"
+                [disabled]="carregando()"
+                (change)="alternarPreenchimento(opcao.value, $event)"
+              />
+              {{ opcao.label }}
+            </label>
+          }
+        </div>
+      </div>
+
+      <div class="field field-note">
+        <label for="notaMaior">Nota maior/igual</label>
+        <input
+          id="notaMaior"
+          type="number"
+          min="1"
+          max="5"
+          step="1"
+          [(ngModel)]="filtroNotaMaior"
+          [disabled]="carregando()"
+        />
+      </div>
+
+      <div class="field field-note">
+        <label for="notaMenor">Nota menor/igual</label>
+        <input
+          id="notaMenor"
+          type="number"
+          min="1"
+          max="5"
+          step="1"
+          [(ngModel)]="filtroNotaMenor"
+          [disabled]="carregando()"
+        />
+      </div>
+
+      <div class="field field-actions">
+        <label>&nbsp;</label>
+        <div class="btn-row">
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="aplicarFiltros()"
+            [disabled]="carregando()"
+          >
+            {{ carregando() ? 'Carregando...' : 'Aplicar' }}
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="limparFiltros()"
+            [disabled]="carregando()"
+          >
+            Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  @if (erro()) {
+    <div class="alert-error">{{ erro() }}</div>
+  }
+
+  @if (relatorio(); as dados) {
+    <section class="resumo-card">
+      <h2>Resumo</h2>
+      <p><strong>Ordens filtradas:</strong> {{ dados.ordens.length }}</p>
+      <div class="resumo-grid">
+        <app-resumo-tipo-card label="Notas (compilado)" [resumo]="dados.resumo.resumoNotas" />
+        <app-resumo-tipo-card label="Notas gerais" [resumo]="dados.resumo.resumoGeral" />
+        <app-resumo-tipo-card label="Principios ativos" [resumo]="dados.resumo.resumoPrincipioAtivo" />
+        <app-resumo-tipo-card label="Excipientes" [resumo]="dados.resumo.resumoExcipiente" />
+        <app-resumo-tipo-card label="Embalagens" [resumo]="dados.resumo.resumoEmbalagem" />
+      </div>
+    </section>
+
+    <section class="ordens-list">
+      @for (ordem of dados.ordens; track trackByOrdemId($index, ordem)) {
+        <article class="ordem-card">
+          <header class="ordem-header">
+            <h3>Ordem #{{ ordem.ordemManipulacaoId }}</h3>
+            <span>
+              Usuário: <strong>{{ ordem.usuarioLogin }}</strong> (#{{ ordem.usuarioId }})
+            </span>
+            <span>
+              Criada em: <strong>{{ ordem.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</strong>
+            </span>
+          </header>
+
+          <div class="ordem-meta">
+            <span>Idade: {{ ordem.idade }}</span>
+            <span>Peso: {{ ordem.peso | number: '1.0-2' }}</span>
+            <span>Sexo: {{ ordem.sexo }}</span>
+            <span>
+              Frequência: {{ ordem.frequenciaDose }} {{ ordem.tipoFrequenciaDose ?? '-' }}
+            </span>
+          </div>
+
+          @if (ordem.recomendacaoGeral; as rg) {
+            <div class="block">
+              <h4>Recomendação geral</h4>
+              <p><strong>Nível:</strong> {{ rg.nivel | uppercase }}</p>
+              <p><strong>Mensagem:</strong> {{ rg.mensagem || '-' }}</p>
+              <p><strong>Nota feedback:</strong> {{ rg.feedback?.nota ?? '-' }}</p>
+              <p><strong>Observação feedback:</strong> {{ rg.feedback?.observacoes || '-' }}</p>
+              <p>
+                <strong>Falso positivo:</strong>
+                {{ getFalsoPositivoTexto(rg.feedback?.falsoPositivo) }}
+              </p>
+            </div>
+          }
+
+          <div class="block">
+            <h4>Princípios ativos</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nome</th>
+                  <th>Qtd</th>
+                  <th>Unidade</th>
+                  <th>Nível</th>
+                  <th>Mensagem IA</th>
+                  <th>Nota feedback</th>
+                  <th>Observação feedback</th>
+                  <th>Falso positivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of ordem.principiosAtivos; track item.itemId) {
+                  <tr>
+                    <td>{{ item.ordem }}</td>
+                    <td>{{ item.nome }}</td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>{{ item.unidade }}</td>
+                    <td>{{ item.recomendacao?.nivel || '-' }}</td>
+                    <td>{{ item.recomendacao?.mensagem || '-' }}</td>
+                    <td>{{ item.recomendacao?.feedback?.nota ?? '-' }}</td>
+                    <td>{{ item.recomendacao?.feedback?.observacoes || '-' }}</td>
+                    <td>{{ getFalsoPositivoTexto(item.recomendacao?.feedback?.falsoPositivo) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="block">
+            <h4>Excipientes</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nome</th>
+                  <th>Qtd</th>
+                  <th>Unidade</th>
+                  <th>Nível</th>
+                  <th>Mensagem IA</th>
+                  <th>Nota feedback</th>
+                  <th>Observação feedback</th>
+                  <th>Falso positivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of ordem.excipientes; track item.itemId) {
+                  <tr>
+                    <td>{{ item.ordem }}</td>
+                    <td>{{ item.nome }}</td>
+                    <td>{{ item.quantidade }}</td>
+                    <td>{{ item.unidade }}</td>
+                    <td>{{ item.recomendacao?.nivel || '-' }}</td>
+                    <td>{{ item.recomendacao?.mensagem || '-' }}</td>
+                    <td>{{ item.recomendacao?.feedback?.nota ?? '-' }}</td>
+                    <td>{{ item.recomendacao?.feedback?.observacoes || '-' }}</td>
+                    <td>{{ getFalsoPositivoTexto(item.recomendacao?.feedback?.falsoPositivo) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="block">
+            <h4>Embalagens</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nome</th>
+                  <th>Nível</th>
+                  <th>Mensagem IA</th>
+                  <th>Nota feedback</th>
+                  <th>Observação feedback</th>
+                  <th>Falso positivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of ordem.embalagens; track item.itemId) {
+                  <tr>
+                    <td>{{ item.ordem }}</td>
+                    <td>{{ item.nome }}</td>
+                    <td>{{ item.recomendacao?.nivel || '-' }}</td>
+                    <td>{{ item.recomendacao?.mensagem || '-' }}</td>
+                    <td>{{ item.recomendacao?.feedback?.nota ?? '-' }}</td>
+                    <td>{{ item.recomendacao?.feedback?.observacoes || '-' }}</td>
+                    <td>{{ getFalsoPositivoTexto(item.recomendacao?.feedback?.falsoPositivo) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</div>
+

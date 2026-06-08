@@ -1,0 +1,19 @@
+<article class="resumo-tipo-card">
+  <header class="card-header">
+    <div class="metricas">
+      <div><strong>Média:</strong> {{ mediaTexto }}</div>
+      <div><strong>Total:</strong> {{ total }}</div>
+    </div>
+    <h3>{{ label }}</h3>
+  </header>
+
+  <div class="grafico">
+    <canvas
+      baseChart
+      [type]="'bar'"
+      [data]="barChartData"
+      [options]="barChartOptions"
+      [plugins]="barChartPlugins"
+    ></canvas>
+  </div>
+</article>

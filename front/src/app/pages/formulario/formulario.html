@@ -1,0 +1,632 @@
+<div class="page">
+  <header class="page-header">
+    <div class="header-actions">
+      <button type="button" class="btn-logout" (click)="deslogar()">Deslogar</button>
+    </div>
+    <h1>Analise de Compatibilidade Farmaceutica</h1>
+    <p class="subtitle">Preencha os dados e envie para análise da IA</p>
+  </header>
+
+  <form class="form-card" (ngSubmit)="enviar()" #f="ngForm">
+    @if (!resposta() && !carregando()) {
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem">
+        <button type="button" class="btn-add" (click)="usarValoresPadrao()">
+          Usar valores padrao
+        </button>
+      </div>
+    }
+
+    <section class="section">
+      <h2 class="section-title">Dados do Paciente</h2>
+      <div class="fields-row">
+        <div class="field">
+          <label for="idade">Idade (anos)</label>
+          <input
+            id="idade"
+            type="number"
+            min="0"
+            max="150"
+            required
+            [(ngModel)]="payload.idade"
+            name="idade"
+            [disabled]="!!resposta() || carregando()"
+          />
+        </div>
+
+        <div class="field">
+          <label for="peso">Peso (kg)</label>
+          <input
+            id="peso"
+            type="number"
+            min="0"
+            step="0.1"
+            required
+            [(ngModel)]="payload.peso"
+            name="peso"
+            [disabled]="!!resposta() || carregando()"
+          />
+        </div>
+
+        <div class="field">
+          <label>Sexo</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="sexo"
+                value="M"
+                [(ngModel)]="payload.sexo"
+                [disabled]="!!resposta() || carregando()"
+              />
+              Masculino
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="sexo"
+                value="F"
+                [(ngModel)]="payload.sexo"
+                [disabled]="!!resposta() || carregando()"
+              />
+              Feminino
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Frequencia da Dose</h2>
+      <div class="fields-row">
+        <div class="field">
+          <label for="tipo_frequencia_dose">Tipo de Frequencia</label>
+          <select
+            id="tipo_frequencia_dose"
+            required
+            [(ngModel)]="payload.tipo_frequencia_dose"
+            name="tipo_frequencia_dose"
+            [disabled]="!!resposta() || carregando()"
+          >
+            <option value="dia">Dia</option>
+            <option value="semana">Semana</option>
+            <option value="mes">Mes</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="frequencia_dose">Frequencia</label>
+          <input
+            id="frequencia_dose"
+            type="number"
+            min="1"
+            required
+            [(ngModel)]="payload.frequencia_dose"
+            name="frequencia_dose"
+            [disabled]="!!resposta() || carregando()"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Embalagens</h2>
+      @for (embalagem of payload.embalagens; track trackByIndex($index)) {
+        <div class="item-row">
+          <span class="item-index">{{ $index + 1 }}</span>
+          <div class="field flex-3">
+            <label>Nome da embalagem</label>
+            <input
+              type="text"
+              required
+              [(ngModel)]="payload.embalagens[$index]"
+              [name]="'embalagem-' + $index"
+              [disabled]="!!resposta() || carregando()"
+              placeholder="Ex: frasco ambar, blister"
+            />
+          </div>
+          @if (!resposta() && !carregando()) {
+            <button
+              type="button"
+              class="btn-remove"
+              [disabled]="payload.embalagens.length === 1"
+              (click)="removerEmbalagem($index)"
+            >
+              X
+            </button>
+          }
+        </div>
+
+        @if (resposta()?.recomendacoesEmbalagens?.[$index]; as rec) {
+          <div class="result-item" [ngClass]="getNivelClass(rec.nivel)">
+            <strong>{{ rec.nivel | uppercase }}</strong>
+            <span>{{ rec.mensagem }}</span>
+          </div>
+          <div class="feedback-card">
+            <div class="field">
+              <label>Nota</label>
+              <div class="stars-rating">
+                @for (nota of notasEstrela; track nota) {
+                  <input
+                    type="radio"
+                    [id]="'nota-emb-' + rec.id + '-' + nota"
+                    [name]="'nota-emb-' + rec.id"
+                    [value]="nota"
+                    [(ngModel)]="getFeedbackFormByItem('embalagem', rec.id).nota"
+                  />
+                  <label
+                    [for]="'nota-emb-' + rec.id + '-' + nota"
+                    [class.active]="nota <= getFeedbackFormByItem('embalagem', rec.id).nota"
+                    >&#9733;</label
+                  >
+                }
+              </div>
+            </div>
+            <div class="fields-row">
+              <div class="field flex-3">
+                <label>Observacoes</label>
+                <input
+                  type="text"
+                  maxlength="1000"
+                  [(ngModel)]="getFeedbackFormByItem('embalagem', rec.id).observacoes"
+                  [name]="'obs-emb-' + rec.id"
+                />
+              </div>
+              <div class="field flex-2 checkbox-field">
+                <label>
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="getFeedbackFormByItem('embalagem', rec.id).falsoPositivo"
+                    [name]="'fp-emb-' + rec.id"
+                  />
+                  Falso positivo
+                </label>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-feedback"
+              [disabled]="getFeedbackStateByItem('embalagem', rec.id).salvando"
+              (click)="salvarFeedback('embalagem', rec.id)"
+            >
+              {{
+                getFeedbackStateByItem('embalagem', rec.id).salvando
+                  ? 'Salvando...'
+                  : 'Salvar feedback'
+              }}
+            </button>
+            <span
+              class="feedback-status"
+              [class.enviado]="getFeedbackStateByItem('embalagem', rec.id).enviado"
+              [class.pendente]="!getFeedbackStateByItem('embalagem', rec.id).enviado"
+            >
+              {{ getFeedbackStateByItem('embalagem', rec.id).enviado ? 'Enviado' : 'Pendente' }}
+            </span>
+            @if (getFeedbackStateByItem('embalagem', rec.id).sucesso) {
+              <div class="feedback-ok">
+                {{ getFeedbackStateByItem('embalagem', rec.id).sucesso }}
+              </div>
+            }
+            @if (getFeedbackStateByItem('embalagem', rec.id).erro) {
+              <div class="feedback-error">
+                {{ getFeedbackStateByItem('embalagem', rec.id).erro }}
+              </div>
+            }
+          </div>
+        }
+      }
+      @if (!resposta() && !carregando()) {
+        <button type="button" class="btn-add" (click)="adicionarEmbalagem()">
+          + Adicionar Embalagem
+        </button>
+      }
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Principios Ativos</h2>
+      @for (item of payload.principiosAtivos; track trackByIndex($index)) {
+        <div class="item-row">
+          <span class="item-index">{{ $index + 1 }}</span>
+
+          <div class="field flex-3">
+            <label>Nome</label>
+            <input
+              type="text"
+              required
+              [(ngModel)]="item.nome"
+              [name]="'pa-nome-' + $index"
+              [disabled]="!!resposta() || carregando()"
+            />
+          </div>
+
+          <div class="field flex-2">
+            <label>Quantidade</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              [(ngModel)]="item.quantidade"
+              [name]="'pa-qtd-' + $index"
+              [disabled]="!!resposta() || carregando()"
+            />
+          </div>
+
+          <div class="field flex-1">
+            <label>Unidade</label>
+            <select
+              [(ngModel)]="item.tipoMedida"
+              [name]="'pa-unidade-' + $index"
+              [disabled]="!!resposta() || carregando()"
+            >
+              @for (u of tiposMedidaPrincipioAtivo; track u) {
+                <option [value]="u">{{ u }}</option>
+              }
+            </select>
+          </div>
+
+          @if (!resposta() && !carregando()) {
+            <button
+              type="button"
+              class="btn-remove"
+              [disabled]="payload.principiosAtivos.length === 1"
+              (click)="removerPrincipioAtivo($index)"
+            >
+              X
+            </button>
+          }
+        </div>
+
+        @if (resposta()?.recomendacoesPrincipiosAtivos?.[$index]; as rec) {
+          <div class="result-item" [ngClass]="getNivelClass(rec.nivel)">
+            <strong>{{ rec.nivel | uppercase }}</strong>
+            <span>{{ rec.mensagem }}</span>
+          </div>
+          <div class="feedback-card">
+            <div class="field">
+              <label>Nota</label>
+              <div class="stars-rating">
+                @for (nota of notasEstrela; track nota) {
+                  <input
+                    type="radio"
+                    [id]="'nota-pa-' + rec.id + '-' + nota"
+                    [name]="'nota-pa-' + rec.id"
+                    [value]="nota"
+                    [(ngModel)]="getFeedbackFormByItem('principioAtivo', rec.id).nota"
+                  />
+                  <label
+                    [for]="'nota-pa-' + rec.id + '-' + nota"
+                    [class.active]="nota <= getFeedbackFormByItem('principioAtivo', rec.id).nota"
+                    >&#9733;</label
+                  >
+                }
+              </div>
+            </div>
+            <div class="fields-row">
+              <div class="field flex-3">
+                <label>Observacoes</label>
+                <input
+                  type="text"
+                  maxlength="1000"
+                  [(ngModel)]="getFeedbackFormByItem('principioAtivo', rec.id).observacoes"
+                  [name]="'obs-pa-' + rec.id"
+                />
+              </div>
+              <div class="field flex-2 checkbox-field">
+                <label>
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="getFeedbackFormByItem('principioAtivo', rec.id).falsoPositivo"
+                    [name]="'fp-pa-' + rec.id"
+                  />
+                  Falso positivo
+                </label>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-feedback"
+              [disabled]="getFeedbackStateByItem('principioAtivo', rec.id).salvando"
+              (click)="salvarFeedback('principioAtivo', rec.id)"
+            >
+              {{
+                getFeedbackStateByItem('principioAtivo', rec.id).salvando
+                  ? 'Salvando...'
+                  : 'Salvar feedback'
+              }}
+            </button>
+            <span
+              class="feedback-status"
+              [class.enviado]="getFeedbackStateByItem('principioAtivo', rec.id).enviado"
+              [class.pendente]="!getFeedbackStateByItem('principioAtivo', rec.id).enviado"
+            >
+              {{
+                getFeedbackStateByItem('principioAtivo', rec.id).enviado ? 'Enviado' : 'Pendente'
+              }}
+            </span>
+            @if (getFeedbackStateByItem('principioAtivo', rec.id).sucesso) {
+              <div class="feedback-ok">
+                {{ getFeedbackStateByItem('principioAtivo', rec.id).sucesso }}
+              </div>
+            }
+            @if (getFeedbackStateByItem('principioAtivo', rec.id).erro) {
+              <div class="feedback-error">
+                {{ getFeedbackStateByItem('principioAtivo', rec.id).erro }}
+              </div>
+            }
+          </div>
+        }
+      }
+      @if (!resposta() && !carregando()) {
+        <button type="button" class="btn-add" (click)="adicionarPrincipioAtivo()">
+          + Adicionar Principio Ativo
+        </button>
+      }
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Excipientes</h2>
+      @for (item of payload.excipientes; track trackByIndex($index)) {
+        <div class="item-row">
+          <span class="item-index">{{ $index + 1 }}</span>
+
+          <div class="field flex-3">
+            <label>Nome</label>
+            <input
+              type="text"
+              required
+              [(ngModel)]="item.nome"
+              [name]="'exc-nome-' + $index"
+              [disabled]="!!resposta() || carregando()"
+            />
+          </div>
+
+          <div class="field flex-2">
+            <label>Quantidade</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [required]="!isExcipienteQsp($index)"
+              [(ngModel)]="item.quantidade"
+              [name]="'exc-qtd-' + $index"
+              [disabled]="!!resposta() || carregando() || isExcipienteQsp($index)"
+            />
+          </div>
+
+          <div class="field flex-1">
+            <label>Unidade</label>
+            <select
+              [(ngModel)]="item.tipoMedida"
+              [name]="'exc-unidade-' + $index"
+              [disabled]="!!resposta() || carregando()"
+              (ngModelChange)="onTipoMedidaExcipienteChange($index)"
+            >
+              @for (u of tiposMedidaExcipiente; track u) {
+                <option [value]="u">{{ u }}</option>
+              }
+            </select>
+          </div>
+
+          @if (!resposta() && !carregando()) {
+            <button
+              type="button"
+              class="btn-remove"
+              [disabled]="payload.excipientes.length === 1"
+              (click)="removerExcipiente($index)"
+            >
+              X
+            </button>
+          }
+        </div>
+
+        @if (resposta()?.recomendacoesExcipientes?.[$index]; as rec) {
+          <div class="result-item" [ngClass]="getNivelClass(rec.nivel)">
+            <strong>{{ rec.nivel | uppercase }}</strong>
+            <span>{{ rec.mensagem }}</span>
+          </div>
+          <div class="feedback-card">
+            <div class="field">
+              <label>Nota</label>
+              <div class="stars-rating">
+                @for (nota of notasEstrela; track nota) {
+                  <input
+                    type="radio"
+                    [id]="'nota-exc-' + rec.id + '-' + nota"
+                    [name]="'nota-exc-' + rec.id"
+                    [value]="nota"
+                    [(ngModel)]="getFeedbackFormByItem('excipiente', rec.id).nota"
+                  />
+                  <label
+                    [for]="'nota-exc-' + rec.id + '-' + nota"
+                    [class.active]="nota <= getFeedbackFormByItem('excipiente', rec.id).nota"
+                    >&#9733;</label
+                  >
+                }
+              </div>
+            </div>
+            <div class="fields-row">
+              <div class="field flex-3">
+                <label>Observacoes</label>
+                <input
+                  type="text"
+                  maxlength="1000"
+                  [(ngModel)]="getFeedbackFormByItem('excipiente', rec.id).observacoes"
+                  [name]="'obs-exc-' + rec.id"
+                />
+              </div>
+              <div class="field flex-2 checkbox-field">
+                <label>
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="getFeedbackFormByItem('excipiente', rec.id).falsoPositivo"
+                    [name]="'fp-exc-' + rec.id"
+                  />
+                  Falso positivo
+                </label>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-feedback"
+              [disabled]="getFeedbackStateByItem('excipiente', rec.id).salvando"
+              (click)="salvarFeedback('excipiente', rec.id)"
+            >
+              {{
+                getFeedbackStateByItem('excipiente', rec.id).salvando
+                  ? 'Salvando...'
+                  : 'Salvar feedback'
+              }}
+            </button>
+            <span
+              class="feedback-status"
+              [class.enviado]="getFeedbackStateByItem('excipiente', rec.id).enviado"
+              [class.pendente]="!getFeedbackStateByItem('excipiente', rec.id).enviado"
+            >
+              {{ getFeedbackStateByItem('excipiente', rec.id).enviado ? 'Enviado' : 'Pendente' }}
+            </span>
+            @if (getFeedbackStateByItem('excipiente', rec.id).sucesso) {
+              <div class="feedback-ok">
+                {{ getFeedbackStateByItem('excipiente', rec.id).sucesso }}
+              </div>
+            }
+            @if (getFeedbackStateByItem('excipiente', rec.id).erro) {
+              <div class="feedback-error">
+                {{ getFeedbackStateByItem('excipiente', rec.id).erro }}
+              </div>
+            }
+          </div>
+        }
+      }
+      @if (!resposta() && !carregando()) {
+        <button type="button" class="btn-add" (click)="adicionarExcipiente()">
+          + Adicionar Excipiente
+        </button>
+      }
+    </section>
+
+    @if (resposta()) {
+      <section class="section section-result">
+        <h3 class="section-title">Recomendacao Geral</h3>
+        <div class="result-item" [ngClass]="getNivelClass(resposta()!.recomendacaoGeral.nivel)">
+          <strong>{{ resposta()!.recomendacaoGeral.nivel | uppercase }}</strong>
+          <span>{{ resposta()!.recomendacaoGeral.mensagem }}</span>
+        </div>
+
+        <div class="feedback-card">
+          <div class="field">
+            <label>Nota</label>
+            <div class="stars-rating">
+              @for (nota of notasEstrela; track nota) {
+                <input
+                  type="radio"
+                  [id]="'nota-geral-' + resposta()!.recomendacaoGeral.id + '-' + nota"
+                  [name]="'nota-geral-' + resposta()!.recomendacaoGeral.id"
+                  [value]="nota"
+                  [(ngModel)]="
+                    getFeedbackFormByItem('geral', resposta()!.recomendacaoGeral.id).nota
+                  "
+                />
+                <label
+                  [for]="'nota-geral-' + resposta()!.recomendacaoGeral.id + '-' + nota"
+                  [class.active]="
+                    nota <= getFeedbackFormByItem('geral', resposta()!.recomendacaoGeral.id).nota
+                  "
+                  >&#9733;</label
+                >
+              }
+            </div>
+          </div>
+          <div class="fields-row">
+            <div class="field flex-3">
+              <label>Observacoes</label>
+              <input
+                type="text"
+                maxlength="1000"
+                [(ngModel)]="
+                  getFeedbackFormByItem('geral', resposta()!.recomendacaoGeral.id).observacoes
+                "
+                [name]="'obs-geral-' + resposta()!.recomendacaoGeral.id"
+              />
+            </div>
+            <div class="field flex-2 checkbox-field">
+              <label>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="
+                    getFeedbackFormByItem('geral', resposta()!.recomendacaoGeral.id).falsoPositivo
+                  "
+                  [name]="'fp-geral-' + resposta()!.recomendacaoGeral.id"
+                />
+                Falso positivo
+              </label>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn-feedback"
+            [disabled]="getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).salvando"
+            (click)="salvarFeedback('geral', resposta()!.recomendacaoGeral.id)"
+          >
+            {{
+              getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).salvando
+                ? 'Salvando...'
+                : 'Salvar feedback'
+            }}
+          </button>
+          <span
+            class="feedback-status"
+            [class.enviado]="
+              getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).enviado
+            "
+            [class.pendente]="
+              !getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).enviado
+            "
+          >
+            {{
+              getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).enviado
+                ? 'Enviado'
+                : 'Pendente'
+            }}
+          </span>
+          @if (getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).sucesso) {
+            <div class="feedback-ok">
+              {{ getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).sucesso }}
+            </div>
+          }
+          @if (getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).erro) {
+            <div class="feedback-error">
+              {{ getFeedbackStateByItem('geral', resposta()!.recomendacaoGeral.id).erro }}
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (erro()) {
+      <div class="alert-error">{{ erro() }}</div>
+    }
+
+    <div class="form-footer">
+      @if (!resposta()) {
+        <button type="submit" class="btn-submit" [disabled]="f.invalid || carregando()">
+          @if (carregando()) {
+            <span class="spinner"></span> Analisando...
+          } @else {
+            Analisar compatibilidade
+          }
+        </button>
+      } @else {
+        <div class="form-footer-info">
+          <span><strong>ID Analise:</strong> {{ resposta()!.ordemManipulacaoId }}</span>
+          <span><strong>ID Recomendacao:</strong> {{ resposta()!.recomendacaoGeral.id }}</span>
+        </div>
+        <button type="button" class="btn-submit btn-submit-secondary" (click)="editarValores()">
+          Editar valores
+        </button>
+        <button type="button" class="btn-submit" (click)="proximaOrdemManipulacao()">
+          Proxima análise
+        </button>
+      }
+    </div>
+  </form>
+</div>

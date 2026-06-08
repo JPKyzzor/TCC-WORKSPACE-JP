@@ -1,0 +1,293 @@
+:host {
+  display: block;
+}
+
+.page {
+  max-width: 1580px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+  position: relative;
+
+  h1 {
+    margin: 0;
+    color: #0f172a;
+  }
+
+  .subtitle {
+    color: #64748b;
+    margin-top: 0.35rem;
+  }
+}
+
+.header-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filters-card,
+.resumo-card,
+.ordem-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.filters-card {
+  padding: 0.9rem;
+}
+
+.filters-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #334155;
+    font-weight: 700;
+  }
+
+  input,
+  select {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #0f172a;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.9rem;
+    min-height: 40px;
+
+    &:focus {
+      outline: none;
+      border-color: #6366f1;
+      background: #ffffff;
+    }
+  }
+}
+
+.field-users {
+  width: 300px;
+}
+
+.field-fill {
+  width: 220px;
+}
+
+.field-note {
+  width: 130px;
+}
+
+.field-checkbox {
+  width: 165px;
+}
+
+.field-actions {
+  margin-left: auto;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.88rem;
+  color: #1e293b;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+
+  &.inline {
+    margin-top: 0.3rem;
+  }
+}
+
+.checkbox-list {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 0.45rem 0.55rem;
+  min-height: 110px;
+  max-height: 145px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  color: #1e293b;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-logout {
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.btn-secondary,
+.btn-logout {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.resumo-card {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+
+  h2 {
+    margin: 0 0 0.6rem;
+    font-size: 1.1rem;
+  }
+}
+
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(200px, 1fr));
+  gap: 0.6rem;
+}
+
+.alert-error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.ordens-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.ordem-card {
+  padding: 0.9rem;
+}
+
+.ordem-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  h3 {
+    margin: 0;
+    color: #0f172a;
+  }
+
+  span {
+    color: #334155;
+    font-size: 0.9rem;
+  }
+}
+
+.ordem-meta {
+  margin-top: 0.55rem;
+  display: flex;
+  gap: 1rem;
+  color: #334155;
+  font-size: 0.87rem;
+}
+
+.block {
+  margin-top: 0.7rem;
+
+  h4 {
+    margin: 0 0 0.35rem;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 0.2rem 0;
+    color: #334155;
+    font-size: 0.88rem;
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+
+  th,
+  td {
+    border: 1px solid #e2e8f0;
+    padding: 0.38rem 0.45rem;
+    text-align: left;
+  }
+
+  th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 1280px) {
+  .resumo-grid {
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .header-actions {
+    position: static;
+    margin-bottom: 0.6rem;
+  }
+
+  .filters-row {
+    flex-wrap: wrap;
+  }
+
+  .field-actions {
+    margin-left: 0;
+  }
+
+  .resumo-grid {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .resumo-grid {
+    grid-template-columns: 1fr;
+  }
+}
